@@ -1,3 +1,9 @@
 /_agent.js
 /helper/build/
 /node_modules/
+/ext/dlmalloc/
+/ext/valgrind-3.14.0/
+/ext/dmalloc-5.4.3.tgz
+/ext/dmalloc-5.5.2.tgz
+/ext/valgrind-3.14.0.tar.bz2
+
