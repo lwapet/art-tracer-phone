@@ -19,4 +19,5 @@
     "frida-gum-types": "^2.0.7",
     "frida-java": "^2.0.6"
   }
+
 }
