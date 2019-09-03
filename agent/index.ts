@@ -1,4 +1,3 @@
-
 import { trace } from "./tracer";
 import { log } from "./logger";
 
@@ -6,7 +5,7 @@ setTimeout(() => {
     try {
         trace({
             onEnter(methodName) {
-                console.log("onEnter", methodName);
+                log("onEnter " + methodName);
             },
             onLeave(methodName) {
             }

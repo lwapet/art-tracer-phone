@@ -37,7 +37,7 @@ let listener: NativePointer;
 try {
     listener = makeListener();
 } catch (e) {
-    add_to_log("Shit: " + e.stack);
+    log("Shit: " + e.stack);
 }
 
 const runtime = api.artRuntime;
@@ -148,6 +148,10 @@ var number_of_block_send = 0;
 var current_number_of_lines = 0; 
 
 function add_to_log(string: String){
+    if (number_of_block_send > 30){
+        log("frida tracer : Stopping sending blocks -******----");
+        return;
+    }
     if (current_number_of_lines >  100){
         send_log(log_bloc);
         log_bloc = "";
@@ -157,7 +161,7 @@ function add_to_log(string: String){
     } else {
         log_bloc = log_bloc + string;
         current_number_of_lines++;
-        log(" adding new line " + current_number_of_lines);
+        //log(" adding new line " + current_number_of_lines);
     }
 }
 
@@ -168,42 +172,15 @@ export function trace(userTraceCallbacks_: TraceCallbacks, methodRegex_: RegExp 
     classRegex = classRegex_;
     userTraceCallbacks = userTraceCallbacks_;
     Java.perform(() => {
-        log("trace() starting up 1");
-        test_client();
-        send_log("first bloc");
-        
+        log(" from frida tracer starting up");
+        //test_client();
+        //send_log("first bloc");
 
 
+        for (var _i = 0; _i < 2000; _i++) {
+           add_to_log(" testing line " + _i);
+        }
 
-/*
-to implement to log 
-#include "stdio.h"
-void WriteLogFile(const char* szString)
-{
-  #IFDEF DEBUG
-
-  FILE* pFile = fopen("logFile.txt", "a");
-  fprintf(pFile, "%s\n",szString);
-  fclose(pFile);
-
-  #ENDIF
-
-}*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-        log("trace() starting up 2");
-     
         const vm = new VM(api);
         const instrumentationOffset = 464;
         const instrumentation = runtime.add(instrumentationOffset);
@@ -252,10 +229,9 @@ void WriteLogFile(const char* szString)
 
         if(Process.arch == "ia32") log("----------////////////// Archictecture  "  +   Process.arch);
      
-        deoptimizeEverything(instrumentation, Memory.allocUtf8String("frida"));
-        addListener(instrumentation, listener, InstrumentationEvent.MethodEntered /* | InstrumentationEvent.MethodExited | InstrumentationEvent.FieldRead | InstrumentationEvent.FieldWritten*/);
+        //deoptimizeEverything(instrumentation, Memory.allocUtf8String("frida"));
+        //addListener(instrumentation, listener, InstrumentationEvent.MethodEntered /* | InstrumentationEvent.MethodExited | InstrumentationEvent.FieldRead | InstrumentationEvent.FieldWritten*/);
         
-
 
         //log("--------> after api: " + JSON.stringify(api)); 
         //log("to see what happen when deoptimisation is not enabled : method are called eather directly from jni or called when already compiled");
@@ -674,9 +650,9 @@ function makeMethodEntered(): NativePointer {
 }
 
 function scanMemory(address: NativePointer, numberBytes: number){
-    add_to_log("----> scanning the memory from " + address + " to " + address.add(numberBytes));
+    //log("----> scanning the memory from " + address + " to " + address.add(numberBytes));
     for(let i = numberBytes/Process.pointerSize; i >= 0; i--){
-        add_to_log("-->address: " + address.add(i * Process.pointerSize) + ", value : " + Memory.readPointer(address.add(i * Process.pointerSize)));
+        //log("-->address: " + address.add(i * Process.pointerSize) + ", value : " + Memory.readPointer(address.add(i * Process.pointerSize)));
     }
 }
 
@@ -854,16 +830,16 @@ function printAsmExploreCallsGetShorty(impl: NativePointer, nlines: number): voi
     let innerFunction: NativePointer = NULL;
     while (counter < nlines) {    
         const insn = Instruction.parse(cur);
-        add_to_log(insn.address + "-->  ......... " + insn.toString()); 
+        log(insn.address + "-->  ......... " + insn.toString()); 
         switch (insn.mnemonic) {
             case "call":
                 callsSeen++;
                 if (callsSeen === 1){
-                    add_to_log("computing the ebx value");
+                    log("computing the ebx value");
                     let eax = ptr(insn.operands[0].value);
-                    add_to_log("eax will have " + eax);
+                    log("eax will have " + eax);
                     ebx = eax.add(ptr("0x13f17")); 
-                    add_to_log("and ebx =" + ebx);
+                    log("and ebx =" + ebx);
                 }if (callsSeen === 2) {
                     innerFunction = ptr(insn.operands[0].value);
                    
@@ -935,7 +911,7 @@ function patchInvoke(): void{
             //let current_args = Memory.readPointer(current_sp.add(dword_size*3));
             let prospective_shorty = Memory.readPointer(current_sp.add(dword_size*6));
             //log("---->shorty address = " + prospective_shorty + " thread  = " + this.thread + " args = " + this.args + " method = " + this.method + "-" + stringMethodName);
-            add_to_log("---->invokef: called from: " + Thread.backtrace(this.context).map(DebugSymbol.fromAddress).join("\n\t ---->"));
+            log("---->invokef: called from: " + Thread.backtrace(this.context).map(DebugSymbol.fromAddress).join("\n\t ---->"));
 
              //log(" first character = " + Memory.readUtf8String(prospective_shorty, 1)); 
             //log("this.threadId = " + this.threadId);
