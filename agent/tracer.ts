@@ -177,8 +177,152 @@ export function trace(userTraceCallbacks_: TraceCallbacks, methodRegex_: RegExp 
         //send_log("first bloc");
 
 
-        for (var _i = 0; _i < 2000; _i++) {
-           add_to_log(" testing line " + _i);
+        //const instrumentation = runtime.add(instrumentationOffset);
+
+
+
+        const getOffsetOfRuntimeFingerPrint: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_runtime_fingerprint"), "uint", []);
+        let fingerPrintOffset = getOffsetOfRuntimeFingerPrint();
+        add_to_log("****fingerpring offset is \n " + fingerPrintOffset); 
+        const getOffsetOfOatFileManager: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_runtime_oat_file_manager_"), "uint", []);
+        let fingerOatFileManagerOffset = getOffsetOfOatFileManager();
+        add_to_log("****oat offset is  " + fingerOatFileManagerOffset); 
+        add_to_log("** memory dump of fingerprint " + hexdump(runtime.add(fingerPrintOffset), {
+            offset: 0,
+            length: 353,
+            header: true,
+            ansi: true
+          }));
+        //let stdStringFingerPrint = new StdString(runtime.add(fingerPrintOffset));
+       
+       
+       // add_to_log("************** build fingerprint: " + stdStringFingerPrint.read());
+        /**** looking at lists offsets 
+        add_to_log("****getting the requested_instrumentation_levels_ offset");
+        const getOffsetOfRequestedInstrumentationLevel: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_requested_instrumentation_levels_"), "uint", []);
+        let offsetOfRequestedInstrumentationLevel: number =   getOffsetOfRequestedInstrumentationLevel();
+        add_to_log("**** offset of requested_instrumentation_levels_ " + offsetOfRequestedInstrumentationLevel);
+
+        add_to_log("****getting the method_entry_listeners_ offset");//352 on the phone
+        const getOffsetOfMethodEntryListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_method_entry_listeners_"), "uint", []);
+        let offsetOfMethodEntryListeners: number =   getOffsetOfMethodEntryListeners();
+        add_to_log("**** offset of method_entry_listeners_ " + offsetOfMethodEntryListeners);
+
+        add_to_log("****getting the method_exit_listeners_ offset");//352 on the phone
+        const getOffsetOfMethodExitListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_method_exit_listeners_"), "uint", []);
+        let offsetOfMethodExitListeners: number =   getOffsetOfMethodExitListeners();
+        add_to_log("**** offset of method_exit_listeners_ " + offsetOfMethodExitListeners);
+
+        add_to_log("****getting the method_unwind_listeners_ offset");//352 on the phone
+        const getOffsetOfMethodUnwindListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_method_unwind_listeners_"), "uint", []);
+        let offsetOfMethodUnwindListeners: number =   getOffsetOfMethodUnwindListeners();
+        add_to_log("**** offset of method_unwind_listeners_ " + offsetOfMethodUnwindListeners);
+
+        add_to_log("****getting the branch_listeners_ offset");//352 on the phone
+        const getOffsetOfBranchListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_branch_listeners_"), "uint", []);
+        let offsetOfBranchListeners: number =   getOffsetOfBranchListeners();
+        add_to_log("**** offset of branch_listeners_ " + offsetOfBranchListeners);
+
+        add_to_log("****getting the invoke_virtual_or_interface_listeners_ offset");//352 on the phone
+        const getOffsetInvokeVirtualOrInterfaceListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_invoke_virtual_or_interface_listeners_"), "uint", []);
+        let offsetOfInvokeVirtualOrInterfaceListeners: number =   getOffsetInvokeVirtualOrInterfaceListeners();
+        add_to_log("**** offset of invoke_virtual_or_interface_listeners_ " + offsetOfInvokeVirtualOrInterfaceListeners);
+
+        add_to_log("****getting the field_read_listeners_ offset");//352 on the phone
+        const getOffsetOfFieldReadListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_field_read_listeners_"), "uint", []);
+        let offsetFieldReadListeners: number =   getOffsetOfFieldReadListeners();
+        add_to_log("**** offset of field_read_listeners_ " + offsetFieldReadListeners);
+
+
+        add_to_log("****getting the field_write_listeners_ offset");//352 on the phone
+        const getOffsetOfFieldWriteListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_field_write_listeners_"), "uint", []);
+        let offsetFieldWriteListeners: number =   getOffsetOfFieldWriteListeners();
+        add_to_log("**** offset of field_write_listeners_ " + offsetFieldWriteListeners);
+
+
+        add_to_log("****getting the exception_caught_listeners_ offset");//352 on the phone
+        const getOffsetOfExceptionCaughtListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_exception_caught_listeners_"), "uint", []);
+        let offsetOfExceptionCaughtListeners: number =   getOffsetOfExceptionCaughtListeners();
+        add_to_log("**** offset of exception_caught_listeners_ " + offsetOfExceptionCaughtListeners);
+
+
+        add_to_log("****getting the deoptimized_methods_lock_listeners_ offset");//352 on the phone
+        const getOffsetOfDeoptimizedMethodLockListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_deoptimized_methods_lock_listeners_"), "uint", []);
+        let offsetOfDeoptimizedMethodLockListeners: number =   getOffsetOfDeoptimizedMethodLockListeners();
+        add_to_log("**** offset of deoptimized_method_lock_listeners_ " + offsetOfDeoptimizedMethodLockListeners);
+
+        add_to_log("****getting the deoptimized_methods_listeners_ offset");//352 on the phone
+        const getOffsetOfDeoptimizedMethodListeners: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_deoptimized_methods_listeners_"), "uint", []);
+        let offsetOfDeoptimizedMethodListeners: number =   getOffsetOfDeoptimizedMethodListeners();
+        add_to_log("**** offset of deoptimized_method_listeners_ " + offsetOfDeoptimizedMethodListeners); 
+*/
+
+    
+        /* testing the offset of instrumenation by looking manually the asm code of some functions */
+        //-------------------------> void Dbg::ProcessDeoptimizationRequest(const DeoptimizationRequest& request)
+        const ProcessDeoptimizationRequest: any = new NativeFunction(
+            dlsym(artlib,"_ZN3art3Dbg28ProcessDeoptimizationRequestERKNS_21DeoptimizationRequestE"),
+            "void",
+            ["pointer", "pointer"],
+            {
+                exceptions: ExceptionsBehavior.Propagate
+            });   
+        add_to_log("***address Of ProcessDeoptimizationRequest " + ProcessDeoptimizationRequest);  
+        add_to_log("instructions : \n"); printAsm(ProcessDeoptimizationRequest,1000);
+        
+        //-------------------------> bool Dbg::IsForcedInterpreterNeededForResolutionImpl(Thread* thread, ArtMethod* m)
+        const IsForcedInterpreterNeededForResolutionImpl: any = new NativeFunction(
+            dlsym(artlib,"_ZN3art3Dbg42IsForcedInterpreterNeededForResolutionImplEPNS_6ThreadEPNS_9ArtMethodE"),
+            "bool",
+            ["pointer", "pointer", "pointer"],
+            {
+                exceptions: ExceptionsBehavior.Propagate
+            });   
+        add_to_log("***address Of IsForcedInterpreterNeededForResolutionImpl " + IsForcedInterpreterNeededForResolutionImpl);  
+        add_to_log("instructions : \n"); printAsm(IsForcedInterpreterNeededForResolutionImpl,1000);
+        
+         
+        //-------------------------> bool Dbg::IsForcedInterpreterNeededForUpcallImpl(Thread* thread, ArtMethod* m)
+        const IsForcedInterpreterNeededForUpcallImpl: any = new NativeFunction(
+            dlsym(artlib,"_ZN3art3Dbg38IsForcedInterpreterNeededForUpcallImplEPNS_6ThreadEPNS_9ArtMethodE"),
+            "bool",
+            ["pointer", "pointer", "pointer"],
+            {
+                exceptions: ExceptionsBehavior.Propagate
+            });   
+        add_to_log("***address Of IsForcedInterpreterNeededForUpcallImpl " + IsForcedInterpreterNeededForUpcallImpl);  
+        add_to_log("instructions : \n"); printAsm(IsForcedInterpreterNeededForUpcallImpl,1000);
+
+        add_to_log("test to del");
+        //-------------------------> bool Dbg::RequiresDeoptimization()
+        const RequiresDeoptimization: any = new NativeFunction(
+            dlsym(artlib,"_ZN3art3Dbg22RequiresDeoptimizationEv"),
+            "bool",
+            ["pointer"],
+            {
+                exceptions: ExceptionsBehavior.Propagate
+            });   
+        add_to_log("***address Of RequiresDeoptimization " + RequiresDeoptimization);  
+        add_to_log("instructions : \n"); printAsm(RequiresDeoptimization,1000);
+
+
+        add_to_log("****getting the deoptimisation_enabled offset");//352 on the phone
+        const getOffsetOfDeoptimisationEnabled : any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_deoptimization_enabled_"), "uint", []);
+        let offsetOfDeoptimisationEnabled: number =   getOffsetOfDeoptimisationEnabled();
+        add_to_log("**** offset of deoptimisation enabled __ " + offsetOfDeoptimisationEnabled);
+        add_to_log("test to del");
+        //log("***** Now looking at the offset used in my assembly code ")
+        //const testOffsetOfDeoptimizationEnabled : any = new NativeFunction(dlsym(helper, "ath_get_offset_of_instrumentation_deoptimization_enabled_my_offset"), "bool", ["pointer"]);
+        //log("address of my function " + testOffsetOfDeoptimizationEnabled);
+        //let deoptimisationEnabled_fromMe: boolean =   testOffsetOfDeoptimizationEnabled(instrumentation);
+        //log("**** result =  " + deoptimisationEnabled_fromMe);
+        //log("**** My source code " ); printAsm(testOffsetOfDeoptimizationEnabled,100);
+        
+        /*
+            bool
+            ath_get_offset_of_instrumentation_deoptimization_enabled_real_offset(Instrumentation* instrumentation){
+            bool result = instrumentation->deoptimization_enabled_;
+            return result; 
         }
 
         const vm = new VM(api);
