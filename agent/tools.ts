@@ -1,5 +1,54 @@
 import { log } from "./logger";
 
+
+export class MethodInfoDecryptage { //this object is passed to the listerner from an intercepted function in the art, called before the listener, it contains usefull infomations 
+                                            // to decrytp arguments passed to the method, like the code_item and the shadow frame. 
+    code_item: NativePointer;
+    shadow_frame: NativePointer;
+    /*constructor() {    
+        this.handle = Memory.alloc(3 * Process.pointerSize);
+    }*/
+    constructor()
+    constructor(code_item_: NativePointer, shadow_frame_: NativePointer) 
+    constructor(code_item_?: NativePointer, shadow_frame_?: NativePointer)  {    
+        if(code_item_ != null){
+            this.code_item = code_item_;
+        }else{
+            this.code_item = Memory.alloc(Process.pointerSize);;
+        }
+        if(shadow_frame_ != null){
+            this.shadow_frame = shadow_frame_;
+        }else{
+            this.shadow_frame = Memory.alloc(Process.pointerSize);;
+        }
+    }
+}
+
+
+export class Stack<T>{
+    _stack: T[];
+ 
+    constructor(stack?: T[]) {
+      this._stack = stack || [];
+    }
+ 
+    push(item: T) {
+      this._stack.push(item);
+    }
+ 
+    pop(): T | undefined {
+      return this._stack.pop();
+    }
+    
+    clear() {
+      this._stack = [];
+    }
+ 
+    get count(): number {
+      return this._stack.length;
+    }
+}
+
 export class StdInstrumentationStackDeque {
     // from the class definition https://github.com/llvm-mirror/libcxx/blob/master/include/deque
     // line 959 you have three parameters 
@@ -92,10 +141,18 @@ export class StdInstrumentationStackDeque {
 export class StdString {
     handle: NativePointer;
 
-    constructor() {    
+    /*constructor() {    
         this.handle = Memory.alloc(3 * Process.pointerSize);
+    }*/
+    constructor()
+    constructor(handle_ : NativePointer) 
+    constructor(handle_? : NativePointer) {    
+        if(handle_ != null){
+            this.handle = handle_;
+        }else{
+            this.handle = Memory.alloc(3 * Process.pointerSize);
+        }
     }
-
     dispose(): void {
         if (!this.isTiny()) {
             //operatorDelete(this.getAllocatedBuffer());
@@ -106,7 +163,7 @@ export class StdString {
         //log(hexdump(this.handle, { length: 12 }));
         let str: string | null = null;
         if (this.isTiny()) {
-            str = Memory.readUtf8String(this.handle.add(1));  ///////////////////////////  1*Process.pointerSize
+            str = Memory.readUtf8String(Memory.readPointer(this.handle.add(1 * Process.pointerSize)));  ///////////////////////////  1*Process.pointerSize
         } else {
             str = Memory.readUtf8String(this.getAllocatedBuffer());
         }

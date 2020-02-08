@@ -1,16 +1,17 @@
 [binaries]
-c = 'i686-linux-android-clang'
-cpp = 'i686-linux-android-clang++'
-ar = 'i686-linux-android-ar'
-strip = 'i686-linux-android-strip'
+c = 'aarch64-linux-android-clang'
+cpp = 'aarch64-linux-android-clang++'
+ar = 'aarch64-linux-android-ar'
+ld = 'aarch64-linux-android-ld'
+strip = 'aarch64-linux-android-strip'
 
 [properties]
-c_args = ['-Os']
+c_args = ['-Os','-fPIC']
 c_link_args = ['-static', '-s']
 
 
 [host_machine]
-system = 'linux'
-cpu_family = 'x86_64'
-cpu = 'x86_64'
+system = 'android-aarch64'
+cpu_family = 'arm'
+cpu = 'aarch64'
 endian = 'little'

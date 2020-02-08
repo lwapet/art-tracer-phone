@@ -1,3 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dlfcn.h>
+#include <link.h>
+#include <elf.h>
+
 #include <iostream>
 
 
@@ -52,8 +59,198 @@ typedef void (*instrumentation_add_listener_t)(InstrumentationListener* listener
 extern "C"
 {
 
-  
-  
+/*
+bool have_invoke_virtual_or_interface_listeners_ GUARDED_BY(Locks::mutator_lock_);
+
+  // Contains the instrumentation level required by each client of the instrumentation identified
+  // by a string key.
+  typedef SafeMap<const char*, InstrumentationLevel> InstrumentationLevelTable;
+  InstrumentationLevelTable requested_instrumentation_levels_ GUARDED_BY(Locks::mutator_lock_);
+
+  // The event listeners, written to with the mutator_lock_ exclusively held.
+  // Mutators must be able to iterate over these lists concurrently, that is, with listeners being
+  // added or removed while iterating. The modifying thread holds exclusive lock,
+  // so other threads cannot iterate (i.e. read the data of the list) at the same time but they
+  // do keep iterators that need to remain valid. This is the reason these listeners are std::list
+  // and not for example std::vector: the existing storage for a std::list does not move.
+  // Note that mutators cannot make a copy of these lists before iterating, as the instrumentation
+  // listeners can also be deleted concurrently.
+  // As a result, these lists are never trimmed. That's acceptable given the low number of
+  // listeners we have.
+  std::list<InstrumentationListener*> method_entry_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> method_exit_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> method_unwind_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> branch_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> invoke_virtual_or_interface_listeners_
+      GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> dex_pc_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> field_read_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> field_write_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListene
+bool have_invoke_virtual_or_interface_listeners_ GUARDED_BY(Locks::mutator_lock_);
+
+  // Contains the instrumentation level required by each client of the instrumentation identified
+  // by a string key.
+  typedef SafeMap<const char*, InstrumentationLevel> InstrumentationLevelTable;
+  InstrumentationLevelTable requested_instrumentation_levels_ GUARDED_BY(Locks::mutator_lock_);
+
+  // The event listeners, written to with the mutator_lock_ exclusively held.
+  // Mutators must be able to iterate over these lists concurrently, that is, with listeners being
+  // added or removed while iterating. The modifying thread holds exclusive lock,
+  // so other threads cannot iterate (i.e. read the data of the list) at the same time but they
+  // do keep iterators that need to remain valid. This is the reason these listeners are std::list
+  // and not for example std::vector: the existing storage for a std::list does not move.
+  // Note that mutators cannot make a copy of these lists before iterating, as the instrumentation
+  // listeners can also be deleted concurrently.
+  // As a result, these lists are never trimmed. That's acceptable given the low number of
+  // listeners we have.
+  std::list<InstrumentationListener*> method_entry_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> method_exit_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> method_unwind_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> branch_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> invoke_virtual_or_interface_listeners_
+      GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> dex_pc_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> field_read_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> field_write_listeners_ GUARDED_BY(Locks::mutator_lock_);
+  std::list<InstrumentationListener*> exception_caught_listeners_ GUARDED_BY(Locks::mutator_lock_);
+
+  // The set of methods being deoptimized (by the debugger) which must be executed with interpreter
+  // only.
+  mutable ReaderWriterMutex deoptimized_methods_lock_ DEFAULT_MUTEX_ACQUIRED_AFTER;
+  std::unordered_set<ArtMethod*> deoptimized_methods_ GUARDED_BY(deoptimized_methods_lock_);
+  bool deoptimization_enabled_;
+  printing offset of all this*/
+
+
+ unsigned int
+  ath_get_offset_of_instrumentation_requested_instrumentation_levels_()
+  {
+    return offsetof(Instrumentation, requested_instrumentation_levels_);
+  }  
+ unsigned int
+  ath_get_offset_of_instrumentation_method_entry_listeners_()
+  {
+    return offsetof(Instrumentation, method_entry_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_method_exit_listeners_()
+  {
+    return offsetof(Instrumentation, method_exit_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_method_unwind_listeners_()
+  {
+    return offsetof(Instrumentation, method_unwind_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_branch_listeners_()
+  {
+    return offsetof(Instrumentation, branch_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_invoke_virtual_or_interface_listeners_()
+  {
+    return offsetof(Instrumentation, invoke_virtual_or_interface_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_field_read_listeners_()
+  {
+    return offsetof(Instrumentation, field_read_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_field_write_listeners_()
+  {
+    return offsetof(Instrumentation, field_write_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_exception_caught_listeners_()
+  {
+    return offsetof(Instrumentation, exception_caught_listeners_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_deoptimized_methods_lock_listeners_()
+  {
+    return offsetof(Instrumentation, deoptimized_methods_lock_);
+  }  
+   unsigned int
+  ath_get_offset_of_instrumentation_deoptimized_methods_listeners_()
+  {
+    return offsetof(Instrumentation, deoptimized_methods_);
+  }  
+
+
+
+
+
+
+
+
+
+/*bool Instrumentation::IsDeoptimizedMethodsEmpty() const {
+  return deoptimized_methods_.empty();
+}*/
+bool  ath_instrumentation_has_deoptimized_methods_empty_ (Instrumentation* instrumentation){
+  return instrumentation->IsDeoptimizedMethodsEmpty();
+}
+
+
+
+
+
+
+
+
+  unsigned int
+  ath_get_offset_of_alloc_entrypoints_instrumented_()
+  {
+    return offsetof(Instrumentation, alloc_entrypoints_instrumented_);
+  }  
+  unsigned int
+  ath_get_offset_of_instrumentation_deoptimization_enabled_()
+  {
+    return offsetof(Instrumentation, deoptimization_enabled_);
+  }  
+
+  bool
+  ath_instrumentation_deoptimization_enabled_with_my_offset(Instrumentation* instrumentation){
+    bool result = instrumentation->deoptimization_enabled_;
+    return result; 
+  }
+
+  bool 
+  ath_instrumentation_deoptimization_enabled(Instrumentation* instrumentation) {
+    //return instrumentation->HasMethodEntryListeners();
+    return instrumentation->deoptimization_enabled_ ;
+  }
+
+  bool 
+  ath_instrumentation_have_method_entry_listeners_(Instrumentation * instrumentation){
+    return instrumentation->HasMethodEntryListeners();
+  }
+
+  unsigned int
+  ath_get_offset_of_instrumentation_stubs_installed_()
+  {
+    return offsetof(Instrumentation, instrumentation_stubs_installed_);
+  }  
+
+   unsigned int
+  ath_get_offset_of_entry_exit_stubs_installed_()
+  {
+    return offsetof(Instrumentation, entry_exit_stubs_installed_);
+  }  
+
+  void 
+  ath_instrumentation_enable_deoptimization(Instrumentation* instrumentation) {
+    instrumentation->EnableDeoptimization();
+  }
+
+
+
+
+
+
   
 
   ArtMethod*
@@ -162,20 +359,39 @@ extern "C"
   unsigned int
   ath_get_offset_of_runtime_instrumentation ()
   {
-    return offsetof (Runtime, instrumentation_);
+    
+    int n = 10, i = 0;
+    int *piBuffer = NULL;
+    //creating integer of size n.
+    piBuffer = (int*) malloc(n * sizeof(int));
+    //int piBuffer[10] ;
+    //Assigned value to allocated memory
+    for (i = 0; i < n; ++i)
+    {
+      piBuffer [i] = i * 3;
+    }
+    free(piBuffer);
+    
+    return -0.0/0;//offsetof (Runtime, instrumentation_);
     //return sizeof(Instrumentation);
   }
-
+  unsigned int
+  ath_get_offset_of_runtime_fingerprint ()
+  {
+    return offsetof (Runtime, fingerprint_);
+  }
+  unsigned int
+  ath_get_offset_of_runtime_oat_file_manager_ ()
+  {
+    return offsetof (Runtime, oat_file_manager_);
+  }
 
  ///////// tow problems
   void 
   ath_instrumentation_deoptimize_everything(Instrumentation* instrumentation, const char* key) {
     instrumentation->DeoptimizeEverything(key);
   }
-  void 
-  ath_instrumentation_enable_deoptimization(Instrumentation* instrumentation) {
-    instrumentation->EnableDeoptimization();
-  }
+
 
   void   
   ath_instrumentation_force_interpret_only(Instrumentation* instrumentation) {
@@ -212,10 +428,9 @@ extern "C"
   }
 
 
-  /*bool 
-  ath_instrumentation_deoptimization_enabled(Instrumentation* instrumentation) {
-     return instrumentation->deoptimization_enabled_ ;
-  }*/
+ 
+
+
 ///////// 
 
   InstrumentationStackFrame *

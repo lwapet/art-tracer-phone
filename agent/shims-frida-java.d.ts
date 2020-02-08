@@ -41,3 +41,4 @@ declare module "frida-java/lib/vm" {
 }*/
 
 declare const X86Writer: any;
+declare const Arm64Writer: any;
