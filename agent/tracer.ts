@@ -34,6 +34,7 @@ enum InstrumentationEvent {
 
 const retainedHandles: any[] = [];  // to keep calbacks alive
 
+var in_odile: boolean = false // if true, we are with the Odile GUI APP
 let attachCurrentThread_attached = 0;
 
 let userTraceCallbacks: TraceCallbacks;
@@ -66,10 +67,10 @@ const runtime : NativePointer = computeRuntimeObjectAddress(); // In aarch64 (sa
 add_to_log("address computed " + runtime); 
 let baseAddress : NativePointer;
 
-//HELPER CODE
-const helperPath = "/data/local/tmp/re.frida.server/libart-tracer-helper.so";
-const helper : any = dlopen(helperPath);
-add_to_log("**** libc helper obtained !! " + helper);
+//HELPER CODE , all commands related to it are commented with ///
+///const helperPath = "/data/local/tmp/re.frida.server/libart-tracer-helper.so";
+///const helper : any = dlopen(helperPath);
+///add_to_log("**** libc helper obtained !! " + helper);
 const method_Invoke: any = new NativeFunction(
     dlsym(artlib,"_ZN3art9ArtMethod6InvokeEPNS_6ThreadEPjjPNS_6JValueEPKc"),
     "void",
@@ -133,66 +134,16 @@ add_to_log("retriving ArtInterpreterToInterpreterBridge");
  });  
 let decryptageStack = new Stack<MethodInfoDecryptage> ();
 
-/*--const operatorDelete: any = new NativeFunction(
-    dlsym(libcpp ,"_ZdlPv")  ,
-    "void",
-    ["pointer"],
-    {
-        exceptions: ExceptionsBehavior.Propagate
-    });
 
-
-
-
-
-
-const findMethodForProxy: any = new NativeFunction(
-    dlsym(artlib,"_ZN3art11ClassLinker18FindMethodForProxyEPNS_9ArtMethodE"),
-    "pointer",
-    ["pointer","pointer"],
-    {
-        exceptions: ExceptionsBehavior.Propagate
-    }); 
-const runtimeAttachCurrentThread: any = new NativeFunction(
-    dlsym(artlib,"_ZN3art7Runtime19AttachCurrentThreadEPKcbP8_jobjectb"),
-    "bool",
-    ["pointer","bool","pointer","bool"],
-    {
-        exceptions: ExceptionsBehavior.Propagate
-    }); 
-
-const fopen: any = new NativeFunction(
-    dlsym(libc,"fopen"),
-    "pointer",
-    ["pointer","pointer"],
-    {
-        exceptions: ExceptionsBehavior.Propagate
-    });
-const fprintf: any = new NativeFunction(
-    dlsym(libc,"fprintf"),
-    "int",
-    ["pointer","pointer",'...'],
-    {
-        exceptions: ExceptionsBehavior.Propagate
-    });
-const fclose: any = new NativeFunction(
-    dlsym(libc,"fclose"),
-    "int",
-    ["pointer"],
-    {
-        exceptions: ExceptionsBehavior.Propagate
-    });
-            
-
- --*/
  const declaringClassOffset = 0;
 
-var in_odile: boolean = false // if yes, we are with the Odile GUI APP
+
 var log_bloc: string = "";
 var number_of_block_send = 0;
 var current_number_of_lines = 0; 
 
 function add_to_log(string: String){
+    if(string == "") return;
     if (!in_odile){
         log("standalone: " + string);
         return;
@@ -203,10 +154,11 @@ function add_to_log(string: String){
     }
     if (current_number_of_lines >  100){
         send_log(log_bloc);
-        log_bloc = "";
+       
         current_number_of_lines = 0;
         number_of_block_send = number_of_block_send + 1;
-        log("++>NEW BLOCK SENT: " + number_of_block_send);
+        log("frida tracer: -----.-----.-----. BLOCK SENT: id : " + number_of_block_send + " content : \n" + log_bloc );
+        log_bloc = "";
     } //else {
         log_bloc = log_bloc + string;
         current_number_of_lines++;
@@ -216,25 +168,30 @@ function add_to_log(string: String){
 
 
     
-export function trace(userTraceCallbacks_: TraceCallbacks, methodRegex_: RegExp = /.*/, classRegex_: RegExp = /.*/) {
+export function trace(userTraceCallbacks_: TraceCallbacks, classRegex_: RegExp = /.*/, methodRegex_ : RegExp = /.*/) {
     methodRegex = methodRegex_;
     classRegex = classRegex_;
     userTraceCallbacks = userTraceCallbacks_;
     Java.perform(() => {
-        add_to_log("****getting offset of art_instrumentation object");
-        const getOffsetOfRuntimeInstrumentation: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_runtime_instrumentation"), "uint", []);
-        let instrumentationOffset: any = getOffsetOfRuntimeInstrumentation();
-        add_to_log("****instrumentation offset is  " + instrumentationOffset);    
-        //When looking at the aarch64 asm code of some functions using the instrumentation object or calling for Runtime->getInstrumentation()
-        // I realized that other operations is being made like (from code Dgb::RequiresDeoptimization)
-        //ldr x21, [x21, 0x2e0]       ; [0x2e0:4]=-1 ; 736  (the actual pointer I should obtain If I just use the offset computed from my helper)
-        //ldr x20, [x21]               // A memory read at this address
-        //ldrb w10, [x20, 0x2dc]      // a memory read at the new address plus another offset, to have the forced_interpret_only_ element VALUE of 
-                                       //the Instrumentation object in w10, it means the instrumentation object is at this address x20 + 0x2d8 = x2dc - 0x4; 728
-                                       //the offset of forced_interpret_only_ returned by the helper and the one used in functions like
-                                       //Instrumentation::MethodEnterEventImpl (using have_method_entry_listeners_ as offset 5) are the same
+        add_to_log("****testing modification of inputs : getting offset of art_instrumentation object");
+           /** Code used by the helper 
+                const getOffsetOfRuntimeInstrumentation: any = new NativeFunction(dlsym(helper, "ath_get_offset_of_runtime_instrumentation"), "uint", []);
+                let instrumentationOffset: any = getOffsetOfRuntimeInstrumentation();
+                add_to_log("****instrumentation offset is  " + instrumentationOffset);  
+           */
+            /** SOME EXPLAINATIONS 
+            When looking at the aarch64 asm code of some functions using the instrumentation object or calling for Runtime->getInstrumentation()
+            I realized that other operations is being made like (from code Dgb::RequiresDeoptimization)
+            ldr x21, [x21, 0x2e0]       ; [0x2e0:4]=-1 ; 736  (the actual pointer I should obtain If I just use the offset computed from my helper)
+            ldr x20, [x21]               // A memory read at this address
+            ldrb w10, [x20, 0x2dc]       // a memory read at the new address plus another offset, to have the forced_interpret_only_ element VALUE of 
+                                        //the Instrumentation object in w10, it means the instrumentation object is at this address x20 + 0x2d8 = x2dc - 0x4; 728
+                                        //the offset of forced_interpret_only_ returned by the helper and the one used in functions like
+                                        //Instrumentation::MethodEnterEventImpl (using have_method_entry_listeners_ as offset 5) are the same
+            */
+       
         
-        let asmInstrumentationCodeOffset_0x2d8 = 728;//728 because it is (the real offset the offset returned
+        let asmInstrumentationCodeOffset_0x2d8 = 728; //728 because it is (the real offset the offset returned
                                                       //-8 because I considere the real library
       
         
@@ -416,34 +373,29 @@ function patchArtInterpreterToInterpreterBridge(): void{
             //    header: true,
             //    ansi: true
             //  }));
-            let result_info = " -----> IN THE ART_INTERPRETER_TO_INTERPRETER shadow frame memory\n " + hexdump(shadow_frame, {
-                offset: 0,
-                length: 24,
-                header: true,
-                ansi: true
-              });
+            
             
             
             
             let method: NativePointer  = Memory.readPointer(shadow_frame.add(1 * Process.pointerSize));
             //add_to_log("shadow_frame = " + shadow_frame + " method = " + method + " Thread : " + thread + " code item " + code_item + " \n backtrace " + backtrace );
-            result_info = result_info + "shadow_frame = " + shadow_frame + " method = " + method + " Thread : " + thread + " code item " + code_item + " \n backtrace " + backtrace;
+        
             let decryptageDatas: MethodInfoDecryptage = new MethodInfoDecryptage(code_item, shadow_frame);
-            result_info = result_info + "adding the decryptage data to the stack, stack size" +  decryptageStack.count;
-            add_to_log(result_info);
-            //add_to_log("adding the decryptage data to the stack, stack size" +  decryptageStack.count);
-            decryptageStack.push(decryptageDatas);
-            //MethodInfoDecryptageElement
+          
+            
+            
            
            
-            /*let methodNameStringObject = getNameAsString(method, thread); 
+            let methodNameStringObject = getNameAsString(method, thread); 
             const stringMethodName = getNameFromStringObject(methodNameStringObject, thread);
 
-            //add_to_log("testing method name" + stringMethodName + "regex " + methodRegex);
-            //if(!methodRegex.test(stringMethodName as string)){
-            //    add_to_log("method name does not match");
-            //    return;  
-            //}  
+            let result_info: string = "";
+            //result_info  = result_info + "\n ..... ..... ..... testing method name in the interceptor " + stringMethodName + " method regex " + methodRegex;
+            if(!methodRegex.test(stringMethodName as string)){
+                //result_info = result_info + "\n method name does not match";
+                add_to_log(result_info);
+                return;  
+            }  
             /// GETTING THE CLASS NAME : APPROACH BY METHOD CLASS 
             const declaring_classHandle = method.add(declaringClassOffset);
             const declaring_class_ = ptr(Memory.readU32(declaring_classHandle));
@@ -453,27 +405,25 @@ function patchArtInterpreterToInterpreterBridge(): void{
             rawClassName = Memory.readUtf8String(getDescriptor(declaring_class_, storage)) as string;   
             storage.dispose();
             const className = rawClassName.substring(1, rawClassName.length - 1).replace(/\//g, ".");
-            //add_to_log("testing class name");
-            //if(!classRegex.test(className)){
-                //add_to_log("class name does not match");
-               // return;
-            //}
-            add_to_log("--------------------> pointer size " + Process.pointerSize + 
-            " \n ----------------------------> OnEnter Of a Interceptor attached on ArtInterpreterToInterpreterBridge" + 
-            " \n #####>before calling backtrace context " + JSON.stringify(this.context) +
-            "\n IN THE INTERCEPTOR of ArtInterpreterToInterpreterBridge  --> thread = " + thread + ", \n --> codeItem= " + code_item +
-             ", \n shadow_frame : " + shadow_frame + "  \n  method= " + method + ",\n descriptor=" + className + ",\n methodName=" + stringMethodName + 
-            "#####> called from: " + backtrace);
-
-            //TO GET THE SHORTY I NEED TO HAVE THE INTERFACE METHOD FIRST BY USING GetInterfaceMethodIfProxy()
-            //IN THE ART SOURCE CODE, THIS METHOD CALLS Runtime::Current()->GetClassLinker()->FindMethodForProxy(this); AND RETURN THE RESULT 
-            // AND BECAUSE THE LATEST IS EXPOSED, I WILL START BY IMPLEMENTING IT, I DONT USE THE CACHE AS IN THE GetInterfaceMethodIfProxy() 
-            
-            //let class_linker: NativePointer = Memory.readPointer(runtime.add(classLinker_offset));  
-            //log("classLinker : " + class_linker);
-            //let interfaceMethod = findMethodForProxy(class_linker, method);
-            //log("Interface Method obtained" + interfaceMethod);
-*/
+            //result_info =  result_info + "\n testing class name " + className  + " class regex " + className;
+            if(!classRegex.test(className)){
+               //result_info =  result_info + "\n class name does not match";
+               add_to_log(result_info);
+               return;
+            }
+            result_info = result_info + " -----> IN THE ART_INTERPRETER_TO_INTERPRETER shadow frame memory\n " /* + hexdump(shadow_frame, {
+                offset: 0,
+                length: 24,
+                header: true,
+                ansi: true
+              })*/;
+            result_info  =  "\n shadow_frame = " + shadow_frame + " method = " + method + " Thread : " + thread + " code item " + code_item + " \n backtrace " + backtrace;
+            result_info =  result_info + "\n  GOOD CANDIDATE!!!";
+            result_info = result_info + "\n adding the decryptage data to the stack, stack size " +  decryptageStack.count;
+            //add_to_log("adding the decryptage data to the stack, stack size" +  decryptageStack.count);
+            decryptageStack.push(decryptageDatas);
+            //MethodInfoDecryptageElement           
+            //----->add_to_log(result_info);
 
         },
     });
@@ -712,11 +662,12 @@ function makeMethodEntered(): NativePointer {
         let methodNameStringObject = getNameAsString(method, thread); 
         const stringMethodName = getNameFromStringObject(methodNameStringObject,thread);
 
-        //add_to_log("testing method name" + stringMethodName + "regex " + methodRegex);
-        /*if(!methodRegex.test(stringMethodName as string)){
-            add_to_log("method name does not match");
+        let result_info: string =  "";
+        result_info =  result_info + "\n ..... ..... ..... testing method name in listener " + stringMethodName + ", method regex " + methodRegex;
+        if(!methodRegex.test(stringMethodName as string)){
+            //add_to_log(result_info + result_info + "\n method name does not match");
             return;  
-        }*/  
+        }  
         /// GETTING THE CLASS NAME : APPROACH BY METHOD CLASS 
         const declaring_classHandle= method.add(declaringClassOffset);
         const declaring_class_ = ptr(Memory.readU32(declaring_classHandle));
@@ -726,11 +677,11 @@ function makeMethodEntered(): NativePointer {
         rawClassName = Memory.readUtf8String(getDescriptor(declaring_class_, storage)) as string;   
         storage.dispose();
         const className = rawClassName.substring(1, rawClassName.length - 1).replace(/\//g, ".");
-        //add_to_log("testing class name");
-        /*if(!classRegex.test(className)){
-            add_to_log("class name does not match");
+        result_info =  result_info + "\n" + " testing class name " + className + ", ClassRegex " + classRegex;
+        if(!classRegex.test(className)){
+            //add_to_log(result_info + " \n class name does not match");
             return;
-        }*/
+        }
         
 
         //GETTING THE SHORTY
@@ -807,7 +758,7 @@ function makeMethodEntered(): NativePointer {
 */
         let number_inputs_from_method_object = 0;
         let type_ids =  Memory.readPointer(dexfile.add(80)); //0x50
-        let result_info: string = 
+        result_info = result_info + 
         "\n IN THE LISTENER --> param 0 =" + self +" thread = " + thread + ", \n --> thisObject= " + thisObject + 
         ", \n method= " + method + ",\n descriptor=" + className + ",\n methodName=" + stringMethodName 
         + " shorty = " + shorty + " \n " ;
@@ -2280,6 +2231,58 @@ Process.enumerateThreads({
     }
     add_to_log("---->method entered END OF STEPS");
     
+    /*--const operatorDelete: any = new NativeFunction(
+    dlsym(libcpp ,"_ZdlPv")  ,
+    "void",
+    ["pointer"],
+    {
+        exceptions: ExceptionsBehavior.Propagate
+    });
+
+
+
+
+
+
+const findMethodForProxy: any = new NativeFunction(
+    dlsym(artlib,"_ZN3art11ClassLinker18FindMethodForProxyEPNS_9ArtMethodE"),
+    "pointer",
+    ["pointer","pointer"],
+    {
+        exceptions: ExceptionsBehavior.Propagate
+    }); 
+const runtimeAttachCurrentThread: any = new NativeFunction(
+    dlsym(artlib,"_ZN3art7Runtime19AttachCurrentThreadEPKcbP8_jobjectb"),
+    "bool",
+    ["pointer","bool","pointer","bool"],
+    {
+        exceptions: ExceptionsBehavior.Propagate
+    }); 
+
+const fopen: any = new NativeFunction(
+    dlsym(libc,"fopen"),
+    "pointer",
+    ["pointer","pointer"],
+    {
+        exceptions: ExceptionsBehavior.Propagate
+    });
+const fprintf: any = new NativeFunction(
+    dlsym(libc,"fprintf"),
+    "int",
+    ["pointer","pointer",'...'],
+    {
+        exceptions: ExceptionsBehavior.Propagate
+    });
+const fclose: any = new NativeFunction(
+    dlsym(libc,"fclose"),
+    "int",
+    ["pointer"],
+    {
+        exceptions: ExceptionsBehavior.Propagate
+    });
+            
+
+ --*/
     //LOGGING AND TESTING THREAD ID
      /*threads.forEach(function (thread) {
             let current_thread_id = Process.getCurrentThreadId();

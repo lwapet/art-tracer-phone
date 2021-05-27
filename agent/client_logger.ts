@@ -88,7 +88,7 @@ export function send_log(log_to_send: String){
 
     client.connect(10000, '127.0.0.1', function() {
         log('Connected');
-        client.write('--->' + log_to_send);
+        client.write('--->' + log_to_send + '\n');
         client.end();
         log('data sent');
     });
@@ -96,16 +96,16 @@ export function send_log(log_to_send: String){
 
     // When receive server send back data.
     client.on('data', function (data: any) {
-        log('Server return data : ' + data);
+        log('frida: Server return data : ' + data);
     });
 
     // When connection disconnected.
     client.on('end',function () {
-        log('Client socket disconnect. ');
+        log('frida : Client socket disconnect. ');
     });
 
     client.on('timeout', function () {
-        log('Client connection timeout. ');
+        log('frida : Client connection timeout. ');
     });
 
     client.on('error', function (err: any) {
@@ -120,6 +120,6 @@ export function send_log(log_to_send: String){
     });*/
     
     client.on('close', function() {
-        log('Connection closed');
+        log('frida: Connection closed');
     });
 }

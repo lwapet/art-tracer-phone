@@ -22,8 +22,17 @@ setTimeout(() => {
                 },
                 onLeave(methodName) {
                 }
-            //});    
-            },/.*write.*/,/.*/);
+            //});  
+            //},/android.app.ContextImpl/,/getPackageName/); 
+            }/*,new RegExp (['android.app.ContextImpl',
+            '|com.aegislab.sd3prj.antivirus.free.util.ae',
+            '|com.aegislab.sd3prj.antivirus.free.service'].join('')),*/
+            
+            ,new RegExp (['com\.zoner\.android\.antivirus'].join('')),
+          
+            new RegExp (['.*'].join('')));
+
+            //},/java.lang/,/.*/); 
             log(" !!!!!!!!! We are on another processor !!!!!!!!! " + Process.arch);
         }  
     } catch (error) {
